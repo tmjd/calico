@@ -21,8 +21,7 @@ for most users.
 
 > **NOTE:**
 >
-> Calico can also enforce network policy [without a dependency on etcd](hosted/k8s-backend/). This feature is currently experimental
-and is currently only supported as via hosted install.
+> Calico can also enforce network policy [without a dependency on etcd](hosted/kubernetes-datastore/).
 
 ## About the Calico Components
 
@@ -55,7 +54,7 @@ done using the `calicoctl` utility.
 
 ```
 # Download and install `calicoctl`
-wget http://www.projectcalico.org/builds/calicoctl
+wget {{site.data.versions[page.version].first.components.calicoctl.download_url}}
 sudo chmod +x calicoctl
 
 # Run the calico/node container
@@ -88,12 +87,13 @@ ExecStart=/usr/bin/docker run --net=host --privileged --name=calico-node \
   -e CALICO_LIBNETWORK_ENABLED=true \
   -e IP6= \
   -e CALICO_NETWORKING_BACKEND=bird \
+  -e FELIX_DEFAULTENDPOINTTOHOSTACTION=ACCEPT \
   -v /var/run/calico:/var/run/calico \
   -v /lib/modules:/lib/modules \
   -v /run/docker/plugins:/run/docker/plugins \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v /var/log/calico:/var/log/calico \
-  quay.io/calico/node:latest
+  quay.io/calico/node:{{site.data.versions[page.version].first.components["calico/node"].version}}
 ExecStop=/usr/bin/docker rm -f calico-node
 Restart=always
 RestartSec=10
@@ -102,6 +102,12 @@ RestartSec=10
 WantedBy=multi-user.target
 ```
 > Replace `<ETCD_IP>:<ETCD_PORT>` with your etcd configuration.
+
+> **NOTE:**
+>
+> To ensure reasonable dataplane programming latency on a system under load,
+`calico/node` requires a CPU reservation of at least 0.25 cores with additional
+benefits up to 0.5 cores.
 
 ## Installing the Calico CNI plugins
 
@@ -112,8 +118,8 @@ The Kubernetes `kubelet` should be configured to use the `calico` and `calico-ip
 Download the binaries and make sure they're executable
 
 ```bash
-wget -N -P /opt/cni/bin https://github.com/projectcalico/cni-plugin/releases/download/v1.5.5/calico
-wget -N -P /opt/cni/bin https://github.com/projectcalico/cni-plugin/releases/download/v1.5.5/calico-ipam
+wget -N -P /opt/cni/bin {{site.data.versions[page.version].first.components["calico/cni"].download_calico_url}}
+wget -N -P /opt/cni/bin {{site.data.versions[page.version].first.components["calico/cni"].download_calico_ipam_url}}
 chmod +x /opt/cni/bin/calico /opt/cni/bin/calico-ipam
 ```
 
@@ -125,6 +131,7 @@ mkdir -p /etc/cni/net.d
 cat >/etc/cni/net.d/10-calico.conf <<EOF
 {
     "name": "calico-k8s-network",
+    "cniVersion": "0.1.0",
     "type": "calico",
     "etcd_endpoints": "http://<ETCD_IP>:<ETCD_PORT>",
     "log_level": "info",
@@ -158,7 +165,7 @@ tar -zxvf cni-v0.3.0.tgz
 sudo cp loopback /opt/cni/bin/
 ```
 
-## Intalling the Calico network policy controller
+## Installing the Calico network policy controller
 
 The `calico/kube-policy-controller` implements the Kubernetes NetworkPolicy API by watching the
 Kubernetes API for Pod, Namespace, and NetworkPolicy events and configuring Calico in response. It runs as

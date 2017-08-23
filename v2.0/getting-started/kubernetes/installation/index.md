@@ -12,6 +12,7 @@ Calico can run on any Kubernetes cluster which meets the following criteria.
 
 - The kubelet must be configured to use CNI network plugins (e.g `--network-plugin=cni`).
 - The kube-proxy must be started in `iptables` proxy mode.  This is the default as of Kubernetes v1.2.0.
+- The kube-proxy must be started without the `--masquerade-all` flag, which conflicts with Calico policy.
 - The Kubernetes NetworkPolicy API requires at least Kubernetes version v1.3.0.
 
 ## [Calico Hosted Install](hosted)
@@ -26,3 +27,16 @@ own orchestration mechanisms (e.g ansible, chef, bash, etc)
 
 Follow the [integration guide](integration) if you're using a Kubernetes version < v1.4.0, or if you would like
 to integrate Calico into your own installation or deployment scripts.
+
+## Third Party Integrations
+
+A number of popular Kubernetes installers use Calico to provide networking and/or network policy.
+Here are a few, listed alphabetically.
+
+- [Apprenda Kismatic Enterprise Toolkit](https://github.com/apprenda/kismatic)
+- [Container Linux by CoreOS](https://coreos.com/kubernetes/docs/latest/)
+- [GCE](http://kubernetes.io/docs/getting-started-guides/network-policy/calico/)
+- [Gravitational Telekube](http://gravitational.com/blog/gravitational-tigera-partnership/)
+- [Kargo](https://github.com/kubernetes-incubator/kargo)
+- [Kops](https://github.com/kubernetes/kops)
+- [StackPointCloud](https://stackpoint.io)

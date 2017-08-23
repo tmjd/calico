@@ -5,6 +5,19 @@ title: Red Hat Enterprise Linux 7 Packaged Install Instructions
 For this version of Calico, with OpenStack on RHEL 7 or CentOS 7, we recommend
 using OpenStack Liberty or later.
 
+> **NOTE**
+>
+> On RHEL/CentOS 7.3, with Mitaka or earlier, there is a Nova
+> [bug](https://bugs.launchpad.net/nova/+bug/1649527) that breaks Calico
+> operation.  You can avoid this bug by:
+>
+> - using Newton or later (recommended)
+>
+> - or using RHEL/CentOS 7.2, instead of 7.3
+>
+> - or manually [patching](https://review.openstack.org/#/c/425637/) your Nova
+>   install on each compute node.
+
 These instructions will take you through a first-time install of Calico.  If
 you are upgrading an existing system, please see the [Calico on OpenStack
 upgrade]({{site.baseurl}}/{{page.version}}/getting-started/openstack/upgrade)
@@ -48,6 +61,8 @@ networking. Instructions for installing OpenStack on RHEL can be found
 
 ### Configure YUM repositories
 
+{% include ppa_repo_name %}
+
 Add the EPEL repository -- see <https://fedoraproject.org/wiki/EPEL>.
 You may have already added this to install OpenStack.
 
@@ -57,11 +72,11 @@ Configure the Calico repository:
     cat > /etc/yum.repos.d/calico.repo <<EOF
     [calico]
     name=Calico Repository
-    baseurl=http://binaries.projectcalico.org/rpm/calico-2.0/
+    baseurl=http://binaries.projectcalico.org/rpm/{{ ppa_repo_name }}/
     enabled=1
     skip_if_unavailable=0
     gpgcheck=1
-    gpgkey=http://binaries.projectcalico.org/rpm/calico-2.0/key
+    gpgkey=http://binaries.projectcalico.org/rpm/{{ ppa_repo_name }}/key
     priority=97
     EOF
 ```
@@ -461,7 +476,7 @@ On each compute node, perform the following steps:
     Note that you'll also need to configure your route reflector to
     allow connections from the compute node as a route reflector client.
     If you are using BIRD as a route reflector, follow the instructions
-    in [this document]({{site.baseurl}}/{{page.version}}/usage/bird-rr-config). If you are using another route reflector, refer
+    in [this document]({{site.baseurl}}/{{page.version}}/usage/routereflector/bird-rr-config). If you are using another route reflector, refer
     to the appropriate instructions to configure a client connection.
 
     If you *are* configuring a full BGP mesh you'll need to handle the

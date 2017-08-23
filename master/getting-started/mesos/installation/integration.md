@@ -2,8 +2,8 @@
 title: Integration Guide
 ---
 
-This guide explains the components necessary to install Calico on Mesos for integrating with custom configuration management. To install Calico in Mesos, no changes are needed on any Mesos Master.
-**Adding Calico to a Mesos cluster only requires modifications to each Agent.**
+This guide explains how to integrate Calico networking and policy on an existing
+Mesos cluster. These instruction should be followed on each **Agent**.
 
 Ensure you've met the [prerequisites](prerequisites) before continuing, namely that
 you have etcd running.
@@ -13,7 +13,7 @@ Calico runs as a Docker container on each host. The `calicoctl` command line too
 1. Download the calicoctl binary:
 
    ```
-   sudo wget -O /usr/local/bin/calicoctl http://www.projectcalico.org/builds/calicoctl
+   sudo wget -O /usr/local/bin/calicoctl {{site.data.versions[page.version].first.components.calicoctl.download_url}}
    sudo chmod +x /usr/local/bin/calicoctl
    ```
 
@@ -30,8 +30,8 @@ Calico runs as a Docker container on each host. The `calicoctl` command line too
 
    ```
    vagrant@calico-01:~$ docker ps
-   CONTAINER ID        IMAGE                COMMAND             CREATED              STATUS              PORTS               NAMES
-   408bd2b9ba53        calico/node:latest   "start_runit"       About an hour ago    Up About an hour                        calico-node
+   CONTAINER ID        IMAGE                        COMMAND             CREATED             STATUS              PORTS               NAMES
+   408bd2b9ba53        quay.io/calico/node:{{site.data.versions[page.version].first.components["calico/node"].version}}   "start_runit"       3 seconds ago       Up 2 seconds                            calico-node
    ```
 
    Furthermore, check that the `calico/node` container is functioning properly
@@ -42,22 +42,38 @@ Calico runs as a Docker container on each host. The `calicoctl` command line too
    ```
 
 4. Download the Calico CNI plugin to the
-   [`$NETWORK_CNI_PLUGINS_DIR` you configured for Mesos](prerequisites#cni-isolator-enabled-for-mesos-agents).
+   [`$NETWORK_CNI_PLUGINS_DIR` you configured for Mesos](prerequisites).
    You may skip this step if you do not plan on using the Unified Containerizer.
 
    ```shell
    curl -L -o $NETWORK_CNI_PLUGINS_DIR/calico \
-       https://github.com/projectcalico/calico-cni/releases/download/v1.5.5/calico
+       {{site.data.versions[page.version].first.components["calico/cni"].download_calico_url}}
    curl -L -o $NETWORK_CNI_PLUGINS_DIR/calico \
-       https://github.com/projectcalico/calico-cni/releases/download/v1.5.5/calico-ipam
+       {{site.data.versions[page.version].first.components["calico/cni"].download_calico_ipam_url}}
    chmod +x $NETWORK_CNI_PLUGINS_DIR/calico
    chmod +x $NETWORK_CNI_PLUGINS_DIR/calico-ipam
    ```
 
+5. Create a Calico CNI configuration in the [`$NETWORK_CNI_CONF_DIR` you configured for Mesos](prerequisites), replacing `http://master.mesos:2379` with
+   etcd's address:
+
+   ```shell
+   cat > $NETWORK_CNI_CONF_DIR/calico.conf <<EOF
+   {
+      "name": "calico",
+      "cniVersion": "0.1.0",
+      "type": "calico",
+      "ipam": {
+          "type": "calico-ipam"
+      },
+      "etcd_endpoints": "http://master.mesos:2379"
+   }
+   EOF
+   ```
+
+
+
 ## Next Steps
 
 With Calico Installed, you're now ready to launch Calico-networked tasks.
-View the guide relevant to your workloads:
-
-- [Docker Containerizer Tutorial]({{site.baseurl}}/{{page.version}}/getting-started/mesos/tutorials/docker)
-- [Unified Containerizer Tutorial]({{site.baseurl}}/{{page.version}}/getting-started/mesos/tutorials/unified)
+View the [guides on using Calico with Mesos]({{site.baseurl}}/{{page.version}}/getting-started/mesos#tutorials)

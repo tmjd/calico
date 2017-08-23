@@ -17,7 +17,8 @@ metadata:
   cidr: 10.1.0.0/16
 spec:
   ipip:
-    enabled: false
+    enabled: true
+    mode: cross-subnet
   nat-outgoing: true
   disabled: false
 ```
@@ -42,4 +43,21 @@ spec:
 
 | Field    | Description                 | Accepted Values | Schema  | Default    |
 |----------|-----------------------------|--------------|---------|------------|
-| enabled   | When set to true, ipip encapsulation will be used. | true, false | boolean | true
+| enabled  | When set to true, ipip encapsulation will be used. | true, false | boolean | true |
+| mode     | The IPIP mode defining when IPIP will be used.     | always, cross-subnet | string | always |
+
+Routing of packets using IP in IP will be used when the destination IP address
+is in an IP Pool that has IPIP enabled.  In addition, if the `mode` is set to `cross-subnet`,
+Calico will only route using IP in IP if the IP address of the destination node is in a different
+subnet.  The subnet of each node is configured on the node resource (which may be automatically 
+determined when running the calico/node service).
+
+For details on configuring IP-in-IP on your deployment, please read the
+[Configuring IP-in-IP guide]({{site.baseurl}}/{{page.version}}/usage/configuration/ip-in-ip).
+
+> **NOTE**
+>
+> Setting `nat-outgoing` is recommended on any IP Pool with `ipip` enabled.
+When `ipip` is enabled without `nat-outgoing` routing between Workloads and
+Hosts running Calico is asymmetric and may cause traffic to be filtered due to
+[RPF](https://en.wikipedia.org/wiki/Reverse_path_forwarding) checks failing.

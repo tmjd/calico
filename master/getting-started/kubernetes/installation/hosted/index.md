@@ -21,10 +21,9 @@ the recommended hosted approach for deploying Calico in production.
 This manifest installs Calico as well as a single node etcd cluster.  This is the recommended hosted approach
 for getting started quickly with Calico in conjunction with tools like kubeadm.
 
-#### [Etcdless Hosted Install](k8s-backend/)
+#### [Kubernetes Datastore](kubernetes-datastore/)
 
-This manifest installs Calico in a mode where it does not require its own etcd cluster.  This is an experimental
-mode in which the Kubernetes API is used by Calico as its datastore.
+This manifest installs Calico in a mode where it does not require its own etcd cluster.
 
 ## How it works
 
@@ -45,21 +44,22 @@ the following configuration parameters:
 
 ### Configuring the Pod IP range
 
-Calico IPAM assigns IP addresses from
-[IP pools]({{site.baseurl}}/{{page.version}}/reference/calicoctl/resources/ippool). The
-[standard](hosted) and [kubeadm](kubeadm/) manifests include an `ippool.yaml` file which
-configures the default IP pool used by Calico.
+Calico IPAM assigns IP addresses from [IP pools]({{site.baseurl}}/{{page.version}}/reference/calicoctl/resources/ippool).
 
-To change the default IP range used for pods, modify the `cidr` section of the IP pool.
+To change the default IP range used for pods, modify the `CALICO_IPV4POOL_CIDR` section of the calico.yaml manifest.  For more
+information, see the [calico/node configuration reference]({{site.baseurl}}/{{page.version}}/reference/node/configuration).
 
-> **NOTE**
->
-> The etcdless Calico manifest does not include an IP pool configuration, as IP allocation is done based on
-the Kubernetes node.PodCIDR field, not Calico IP pools.
+### Configuring IP-in-IP
 
-> **NOTE**
->
-> The kubeadm Calico manifest also configures ipip encapsulation on the pool by default.
+By default, the self-hosted manifests enable IP-in-IP encapsulation across subnets.  Many users may
+want to disable IP-in-IP encapsulation, for example if:
+
+- Their cluster is [running in a properly configured AWS VPC]({{site.baseurl}}/{{page.version}}/reference/public-cloud/aws).
+- All their Kubernetes nodes are connected to the same L2 network.
+- They intend to use BGP peering to make their underlying infrastructure aware of Pod IP addresses.
+
+To disable IP-in-IP encapsulation, modify the `CALICO_IPV4POOL_IPIP` section of the manifest.  For more
+information, see the [calico/node configuration reference]({{site.baseurl}}/{{page.version}}/reference/node/configuration).
 
 ### Etcd Configuration
 
@@ -86,6 +86,20 @@ To use these manifests with a TLS enabled etcd cluster you must do the following
   - `etcd_key: /calico-secrets/etcd-key`
   - `etcd_cert: /calico-secrets/etcd-cert`
 
+### Authorization Options
+
+Calico's manifests assign its components one of two service accounts.
+Depending on your cluster's authorization mode, you'll want to back these
+ServiceAccounts with the neccessary permissions.
+
+#### RBAC
+
+If using Calico with RBAC, apply the `ClusterRole` and `ClusterRoleBinding` specs:
+
+```
+kubectl apply -f {{site.url}}/{{page.version}}/getting-started/kubernetes/installation/rbac.yaml
+```
+
 ### Other Configuration Options
 
 The following table outlines the remaining supported ConfigMap options:
@@ -110,59 +124,3 @@ be filled in automatically by the `calico/cni` container:
 | `__ETCD_KEY_FILE__`                   | The path to the etcd key file installed to the host, empty if no key present.
 | `__ETCD_CERT_FILE__`                  | The path to the etcd cert file installed to the host, empty if no cert present.
 | `__ETCD_CA_CERT_FILE__`               | The path to the etcd CA file installed to the host, empty if no CA present.
-
-## Using calicoctl with a self-hosted installation
-
-> **NOTE**
->
-> The following information applies to the etcdv2 backend only. See the [etcdless hosted install](k8s-backend/)
-for how to run calicoctl in an etcdless installation.
-
-Using calicoctl is no different on a self-hosted installation.  However, the manifests above do not
-install calicoctl.
-
-You can install calicoctl by [downloading the appropriate release]({{site.baseurl}}/{{page.version}}/releases) to any
-machine with access to your etcd cluster by setting `ETCD_ENDPOINTS`. For example:
-
-```
-ETCD_ENDPOINTS=http://etcd:2379 calicoctl get profile
-```
-
-You can also run calicoctl as a Kubernetes Pod directly using the following command:
-
-```
-kubectl apply -f -<<EOF
-apiVersion: v1
-kind: Pod
-metadata:
-  name: calicoctl
-  namespace: kube-system
-spec:
-  hostNetwork: true
-  containers:
-  - name: calicoctl
-    image: quay.io/calico/ctl:latest
-    command: ["/bin/sh", "-c", "while true; do sleep 3600; done"]
-    env:
-    - name: ETCD_ENDPOINTS
-      valueFrom:
-        configMapKeyRef:
-          name: calico-config
-          key: etcd_endpoints
-EOF
-```
-
-You can then run calicoctl commands through the Pod with kubectl:
-
-```
-$ kubectl exec -ti -n kube-system calicoctl -- /calicoctl get profiles -o wide
-NAME                 TAGS
-k8s_ns.default       k8s_ns.default
-k8s_ns.kube-system   k8s_ns.kube-system
-```
-
-> **NOTE**
->
-> When calicoctl is run as a Pod, the calicoctl node suite of commands is not available.
-
-See the [calicoctl reference guide]({{site.baseurl}}/{{page.version}}/reference/calicoctl) for more information.

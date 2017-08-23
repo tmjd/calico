@@ -86,6 +86,7 @@ ExecStart=/usr/bin/docker run --net=host --privileged --name=calico-node \
   -e NO_DEFAULT_POOLS= \
   -e AS= \
   -e CALICO_LIBNETWORK_ENABLED=true \
+  -e FELIX_DEFAULTENDPOINTTOHOSTACTION=ACCEPT \
   -e IP6= \
   -e CALICO_NETWORKING_BACKEND=bird \
   -v /var/run/calico:/var/run/calico \
@@ -158,7 +159,7 @@ tar -zxvf cni-v0.3.0.tgz
 sudo cp loopback /opt/cni/bin/
 ```
 
-## Intalling the Calico network policy controller
+## Installing the Calico network policy controller
 
 The `calico/kube-policy-controller` implements the Kubernetes NetworkPolicy API by watching the
 Kubernetes API for Pod, Namespace, and NetworkPolicy events and configuring Calico in response. It runs as

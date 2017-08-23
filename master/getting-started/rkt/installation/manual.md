@@ -1,5 +1,5 @@
 ---
-title:  Manual installation of Calico with rkt
+title:  Manual Installation of Calico with rkt
 ---
 
 This tutorial describes how to manually configure a working environment for
@@ -74,7 +74,7 @@ sudo rkt run --stage1-path=/usr/share/rkt/stage1-fly.aci \
   --volume=logs,kind=host,source=/var/log/calico,readOnly=false \
   --mount=volume=logs,target=/var/log/calico \
   --net=host \
-  quay.io/calico/node:latest &
+  quay.io/calico/node:{{site.data.versions[page.version].first.components["calico/node"].version}} &
 ```
 
 > Replace `<ETCD_IP>:<ETCD_PORT>` with your etcd configuration.  The `ETCD_ENDPOINTS`
@@ -87,14 +87,14 @@ You can check that it's running using `sudo rkt list`.
 ```shell
 $ sudo rkt list
 UUID      APP	IMAGE NAME                  STATE   CREATED         STARTED         NETWORKS
-b52bba11  node  quay.io/calico/node:latest  running 10 seconds ago  10 seconds ago
+b52bba11  node  quay.io/calico/node:{{site.data.versions[page.version].first.components["calico/node"].version}}  running 10 seconds ago  10 seconds ago
 ```
 
 ## Installing calicoctl
    Download the calicoctl binary:
 
    ```
-   sudo wget -O /usr/local/bin/calicoctl http://www.projectcalico.org/builds/calicoctl
+   sudo wget -O /usr/local/bin/calicoctl {{site.data.versions[page.version].first.components.calicoctl.download_url}}
    sudo chmod +x calicoctl
    ```
 
@@ -128,8 +128,8 @@ for config discovery.  You may change the location and override the rkt configur
 if desired.
 
 ```bash
-wget -N -P /etc/rkt/net.d https://github.com/projectcalico/cni-plugin/releases/download/v1.5.5/calico
-wget -N -P /etc/rkt/net.d https://github.com/projectcalico/cni-plugin/releases/download/v1.5.5/calico-ipam
+wget -N -P /etc/rkt/net.d {{site.data.versions[page.version].first.components["calico/cni"].download_calico_url}}
+wget -N -P /etc/rkt/net.d {{site.data.versions[page.version].first.components["calico/cni"].download_calico_ipam_url}}
 chmod +x /etc/rkt/net.d/calico /etc/rkt/net.d/calico-ipam
 ```
 
@@ -140,6 +140,7 @@ The Calico CNI plugins require a standard CNI config file.
 To define a rkt network for Calico, create a configuration file in `/etc/rkt/net.d/`.
 
 - Each network should be given a unique "name".
+- Specify the CNI specification version with "cniVersion", for example "cniVersion": "0.1.0".
 - To use Calico networking, specify "type": "calico"
 - To use Calico IPAM, specify "type": "calico-ipam" in the "ipam" section.
 
@@ -157,6 +158,7 @@ For example, run the following to create a network called "mynet"
 cat >/etc/rkt/net.d/10-calico-mynet.conf <<EOF
 {
     "name": "mynet",
+    "cniVersion": "0.1.0",
     "etcd_endpoints": "http://<ETCD_IP>:<ETCD_PORT>",
     "type": "calico",
     "ipam": {
@@ -173,5 +175,6 @@ EOF
 
 ## Next steps
 
-With your deployment ready we recommend you follow the [tutorials]({{site.baseurl}}/{{page.version}}/getting-started/rkt#tutorials)
-to run through examples of managing Calico policy with your rkt containers.
+Now that you have your cluster setup, see the
+[Basic Network Isolation guide]({{site.baseurl}}/{{page.version}}/getting-started/rkt/tutorials/basic)
+for an example of managing Calico policy with your rkt containers.

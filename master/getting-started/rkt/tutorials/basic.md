@@ -1,5 +1,5 @@
 ---
-title: Basic network isolation
+title: Basic Network Isolation
 ---
 
 This guide provides a simple way to try out rkt network isolation with Calico.
@@ -22,7 +22,7 @@ can check that it's running using `sudo rkt list`.
 ```shell
 $ sudo rkt list
 UUID      APP	IMAGE NAME                  STATE   CREATED         STARTED         NETWORKS
-b52bba11  node  quay.io/calico/node:latest  running 10 seconds ago  10 seconds ago
+b52bba11  node  quay.io/calico/node:{{site.data.versions[page.version].first.components["calico/node"].version}}  running 10 seconds ago  10 seconds ago
 ```
 
 ## 2. Create the networks
@@ -49,6 +49,7 @@ This worked example creates two rkt networks. Run these commands on both `calico
 cat >/etc/rkt/net.d/10-calico-network1.conf <<EOF
 {
     "name": "network1",
+    "cniVersion": "0.1.0",
     "type": "calico",
     "ipam": {
         "type": "calico-ipam"
@@ -59,6 +60,7 @@ EOF
 cat >/etc/rkt/net.d/10-calico-network2.conf <<EOF
 {
     "name": "network2",
+    "cniVersion": "0.1.0",
     "type": "calico",
     "ipam": {
         "type": "calico-ipam"
@@ -93,7 +95,7 @@ Use `rkt list` to see the IP.
 $ sudo rkt list
 UUID      APP      IMAGE NAME                                   STATE   CREATED         STARTED         NETWORKS
 6876aae5  busybox  registry-1.docker.io/library/busybox:latest  running 11 seconds ago  11 seconds ago  network1:ip4=192.168.0.0, default-restricted:ip4=172.16.28.2
-b52bba11  node     quay.io/calico/node:latest                   running 2 minutes ago   2 minutes ago
+b52bba11  node     quay.io/calico/node:{{site.data.versions[page.version].first.components["calico/node"].version}}                   running 2 minutes ago   2 minutes ago
 ```
 
 We now have a `busybox` container running on the network `network1` with an IP
