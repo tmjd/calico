@@ -86,7 +86,7 @@ There are several ways to install Felix.
 -   if you are running Ubuntu 14.04, then you can install a version from
     our PPA:
 
-        sudo apt-add-repository ppa:project-calico/calico-<version>
+        sudo add-apt-repository ppa:project-calico/calico-<version>
         sudo apt-get update
         sudo apt-get upgrade
         sudo apt-get install calico-felix
@@ -380,7 +380,7 @@ which allows access to ssh; as well as outbound communication to ports
 
 The lists of failsafe ports can be configured via the configuration
 parameters described in [Calico Configuration]({{site.baseurl}}/{{page.version}}/usage/configuration).
-They can be disabled by setting each configuration value to an empty string.
+They can be disabled by setting each configuration value to "none".
 
 > **WARNING**
 >
