@@ -1,5 +1,6 @@
 ---
 title: 'Configuring BIRD as a BGP Route Reflector'
+redirect_from: latest/usage/bird-rr-config
 ---
 
 These instructions will take you through installing BIRD as a BGP route
@@ -43,8 +44,8 @@ be sufficient:
 
 If that fails, try the following instead:
 
-    wget https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
-    sudo yum install epel-release-7-5.noarch.rpm
+    wget https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-9.noarch.rpm
+    sudo yum install epel-release-7-9.noarch.rpm
 
 With that complete, you can now install BIRD:
 

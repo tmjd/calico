@@ -1,5 +1,6 @@
 ---
 title: Networking Mesos Tasks with Calico-CNI
+redirect_from: latest/getting-started/mesos/tutorials/unified
 ---
 
 ## Prerequisites
@@ -126,8 +127,8 @@ spec:
   egress:
   - action: allow
     protocol: tcp
-    selector: app == 'database'
     destination:
+      selector: app == 'database'
       ports:
       - 6379
 ```

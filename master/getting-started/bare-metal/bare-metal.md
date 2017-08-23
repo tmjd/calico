@@ -17,11 +17,13 @@ Calico does not support setting IPs or policing MAC addresses for host
 interfaces, it assumes that the interfaces are configured by the
 underlying network fabric.
 
-Calico distinguishes workload endpoints from host endpoints by a
-configurable prefix controlled by the `InterfacePrefix` configuration
-value, (see: [Calico Configuration]({{site.baseurl}}/{{page.version}}/usage/configuration)). 
-Interfaces that start with a value listed in `InterfacePrefix` are assumed to be 
-workload interfaces. Others are treated as host interfaces.
+Calico distinguishes workload endpoints from host endpoints by a configurable
+prefix.  Unless you happen to have host interfaces whose name matches the
+default for that prefix (`cali`), you won't need to change it.  In case you do,
+see the `InterfacePrefix` configuration value at [Configuring
+Felix]({{site.baseurl}}/{{page.version}}/reference/felix/configuration).
+Interfaces that start with a value listed in `InterfacePrefix` are assumed to
+be workload interfaces.  Others are treated as host interfaces.
 
 Calico blocks all traffic to/from workload interfaces by default;
 allowing traffic only if the interface is known and policy is in place.
@@ -35,6 +37,9 @@ to/from other interfaces is left alone.
 > workloads bypasses the policy applied to host endpoints. If that weren't the
 > case, the host endpoint policy would need to be very broad to allow all
 > traffic destined for any possible workload.
+>
+> Since version 2.1.0, Calico applies host endpoint policy to traffic that is
+> being forwarded between host interfaces.
 >
 > ![]({{site.baseurl}}/images/bare-metal-packet-flows.png)
 
@@ -59,7 +64,7 @@ these steps, described in more detail below:
 
 Download the calicoctl binary onto your host.
 
-	wget http://www.projectcalico.org/builds/calicoctl
+	wget {{site.data.versions[page.version].first.components.calicoctl.download_url}}
 	chmod +x calicoctl
 
 This binary should be placed in your `$PATH` so it can be run from any
@@ -81,11 +86,13 @@ To create a production cluster, you should follow the guidance in the
 
 ## Installing Felix
 
+{% include ppa_repo_name %}
+
 There are several ways to install Felix.
 
 -   if you are running Ubuntu 14.04 or 16.04, you can install from our PPA:
 
-        sudo apt-add-repository ppa:project-calico/calico-2.0
+        sudo add-apt-repository ppa:project-calico/{{ ppa_repo_name }}
         sudo apt-get update
         sudo apt-get upgrade
         sudo apt-get install calico-felix
@@ -96,18 +103,18 @@ There are several ways to install Felix.
         cat > /etc/yum.repos.d/calico.repo <<EOF
         [calico]
         name=Calico Repository
-        baseurl=http://binaries.projectcalico.org/rpm/calico-2.0/
+        baseurl=http://binaries.projectcalico.org/rpm/{{ ppa_repo_name }}/
         enabled=1
         skip_if_unavailable=0
         gpgcheck=1
-        gpgkey=http://binaries.projectcalico.org/rpm/calico-2.0/key
+        gpgkey=http://binaries.projectcalico.org/rpm/{{ ppa_repo_name }}/key
         priority=97
         EOF
 
         yum install calico-felix
 
 -   if you are running another distribution, follow the instructions in
-    [this document](bare-metal-install) to use the calico-felix binary 
+    [this document](bare-metal-install) to use the calico-felix binary
     directly.
 
 -   if you want to run under docker, you can use `calicoctl node run` to start
@@ -376,9 +383,10 @@ By default, Calico keeps port 22 inbound open on *all* host endpoints,
 which allows access to ssh; as well as outbound communication to ports
 2379, 2380, 4001 and 7001, which allows access to etcd's default ports.
 
-The lists of failsafe ports can be configured via the configuration
-parameters described in [Calico Configuration]({{site.baseurl}}/{{page.version}}/usage/configuration).
-They can be disabled by setting each configuration value to an empty string.
+The lists of failsafe ports can be configured via the configuration parameters
+described in [Configuring
+Felix]({{site.baseurl}}/{{page.version}}/reference/felix/configuration).  They
+can be disabled by setting each configuration value to an empty string.
 
 > **WARNING**
 >
@@ -389,3 +397,25 @@ They can be disabled by setting each configuration value to an empty string.
 >
 > Before disabling the failsafe rules, we recommend creating a policy to
 > replace it with more-specific rules for your environment: see [above](#creating-basic-connectivity-and-calico-policy).
+
+## Untracked policy
+
+Policy for host endpoints can be marked as 'doNotTrack'.  This means that rules
+in that policy should be applied before any data plane connection tracking, and
+that packets allowed by these rules should not be tracked.
+
+A typical scenario for using 'doNotTrack' policy would be a server, running
+directly on a host, that accepts a very high rate of shortlived connections,
+such as `memcached`.  On Linux, if those connections are tracked, the conntrack
+table can fill up and then Linux may drop packets for further connection
+attempts, meaning that those newer connections will fail.  If you are using
+Calico to secure that server's host, you can avoid this problem by defining a
+policy that allows access to the server's ports and is marked as 'doNotTrack'.
+
+Since there is no connection tracking for a 'doNotTrack' policy, it is
+important that the policy's ingress and egress rules are specified
+symmetrically.  For example, for a server on port 999, the policy must include
+an ingress rule allowing access *to* port 999 and an egress rule allowing
+outbound traffic *from* port 999.  (Whereas for a connection tracked policy, it
+is usually enough to specify the ingress rule only, and then connection
+tracking will automatically allow the return path.)
