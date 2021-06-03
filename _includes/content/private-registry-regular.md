@@ -1,0 +1,81 @@
+#### Push {{site.prodname}} images to your registry
+
+To install images from your registry, you must first pull the images from Tigera's registry, retag them with your own registry, and then push the newly-tagged images to your own registry.
+
+1. Use the following commands to pull the required {{site.prodname}} images.
+
+   ```bash
+   docker pull {{ operator.registry }}/{{ operator.image }}:{{ operator.version }}
+   {% for component in site.data.versions.first.components -%}
+   {% if component[1].image -%}
+   {% if component[1].registry %}{% assign registry = component[1].registry | append: "/" %}{% else %}{% assign registry = page.registry -%} {% endif -%}
+   docker pull {{ registry }}{{ component[1].image }}:{{component[1].version}}
+   {% endif -%}
+   {% endfor -%}
+   ```
+
+1. Retag the images with the name of your registry, `$REGISTRY`.
+
+   ```bash
+   docker tag {{ operator.registry }}/{{ operator.image }}:{{ operator.version }} $REGISTRY/{{ operator.image }}:{{ operator.version }}
+   {% for component in site.data.versions.first.components -%}
+   {% if component[1].image -%}
+   {% if component[1].registry %}{% assign registry = component[1].registry | append: "/" %}{% else %}{% assign registry = page.registry -%} {% endif -%}
+   docker tag {{ registry }}{{ component[1].image }}:{{component[1].version}} $REGISTRY/{{ component[1].image }}:{{component[1].version}}
+   {% endif -%}
+   {% endfor -%}
+   ```
+
+1. Push the images to your registry.
+
+   ```bash
+   docker push $REGISTRY/{{ operator.image }}:{{ operator.version }}
+   {% for component in site.data.versions.first.components -%}
+   {% if component[1].image -%}
+   docker push $REGISTRY/{{ component[1].image }}:{{component[1].version}}
+   {% endif -%}
+   {% endfor -%}
+   ```
+
+#### Run the operator using images from your registry
+
+Before applying `tigera-operator.yaml`, modify registry references to use your custom registry:
+
+```bash
+{% if page.registry != "quay.io/" -%}
+sed -ie "s?{{ page.registry }}?$REGISTRY?g" tigera-operator.yaml
+{% endif -%}
+sed -ie "s?quay.io?$REGISTRY?g" tigera-operator.yaml
+```
+
+Next, if implementing user authentication to access a private registry, add the image pull secret to the operator deployment spec:
+
+```bash
+sed -ie "/serviceAccountName: tigera-operator/a \      imagePullSecrets:\n\      - name: $REGISTRY_PULL_SECRET"  tigera-operator.yaml
+```
+
+<b>For Openshift</b>, after downloading all manifests, modify the following to use your custom registry:
+
+```bash
+{% if page.registry != "quay.io/" -%}
+sed -ie "s?{{ page.registry }}/?$REGISTRY/?" manifests/02-tigera-operator.yaml
+{% endif -%}
+sed -ie "s?quay.io/?$REGISTRY/?" manifests/02-tigera-operator.yaml
+```
+Next, if you are implementing user authentication to access a private registry, add the image pull secret for your `registry` to the secret `tigera-pull-secret`.
+
+#### Configure the operator to use images
+
+Set the `spec.registry` field of your Installation resource to the name of your custom registry. For example:
+
+<pre>
+apiVersion: operator.tigera.io/v1
+kind: Installation
+metadata:
+  name: default
+spec:
+  variant: Calico
+  imagePullSecrets:
+    - name: tigera-pull-secret
+  <b>registry: myregistry.com</b>
+</pre>
