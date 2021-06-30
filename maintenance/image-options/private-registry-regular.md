@@ -4,8 +4,6 @@ description: Configure Calico to pull images from a public or private registry, 
 canonical_url: '/maintenance/image-options/private-registry-regular'
 ---
 
-{% assign operator = site.data.versions.first.tigera-operator %}
-
 ### Big picture
 
 Configure {{site.prodname}} to pull images from a registry (public or private), or from an image path in a registry.
@@ -33,7 +31,7 @@ An **image path** is a directory in a registry that contains images required to 
 
 - {{site.prodname}} is managed by the operator
 - Configure pull access to your registry
-- If you are using a private registry that requires user authentication, ensure that an image pull secret is configured for your registry. Set the enviroment variable, `PRIVATE_REGISTRY_PULL_SECRET` to the secret name. For help, see `imagePullSecrets` and `registry` fields, in [Installation resource reference]({{site.baseurl}}/reference/installation/api).
+- If you are using a private registry that requires user authentication, ensure that an image pull secret is configured for your registry in the tigera-operator namespace. Set the enviroment variable, `REGISTRY_PULL_SECRET` to the secret name. For help, see `imagePullSecrets` and `registry` fields, in [Installation resource reference]({{site.baseurl}}/reference/installation/api).
 
 ### How to
 

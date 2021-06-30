@@ -1,3 +1,5 @@
+{% assign operator = site.data.versions.first.tigera-operator %}
+
 #### Push {{site.prodname}} images to your registry image path
 
 To install images from your registry, you must first pull the images from Tigera's registry, retag them with your own registry, and then push the newly-tagged images to your own registry.
@@ -6,11 +8,14 @@ To install images from your registry, you must first pull the images from Tigera
 
    ```bash
    docker pull {{ operator.registry }}/{{ operator.image }}:{{ operator.version }}
-   {% for component in site.data.versions.first.components -%}
-   {% if component[1].image -%}
-   {% if component[1].registry %}{% assign registry = component[1].registry | append: "/" %}{% else %}{% assign registry = page.registry -%} {% endif -%}
-   docker pull {{ registry }}{{ component[1].image }}:{{component[1].version}}
-   {% endif -%}
+   {% for component in site.data.versions.first.components %}
+   {%-  capture component_name %}{{ component[0] }}{% endcapture -%}
+
+   {%-  if page.imageNames[component_name] %}{% unless component_name contains "flannel" -%}
+   {%-    assign component_name = page.imageNames[component_name] -%}
+   {%     if component[1].registry %}{% assign registry = component[1].registry | append: "/" %}{% else %}{% assign registry = page.registry -%} {% endif -%}
+   docker pull {{ registry }}{{ component_name }}:{{component[1].version}}
+   {%   endunless %}{% endif -%}
    {% endfor -%}
    ```
 
@@ -19,10 +24,13 @@ To install images from your registry, you must first pull the images from Tigera
    ```bash
    docker tag {{ operator.registry }}/{{ operator.image }}:{{ operator.version }} $REGISTRY/$IMAGE_PATH/{{ operator.image | split: "/" | last }}:{{ operator.version }}
    {% for component in site.data.versions.first.components -%}
-   {% if component[1].image -%}
-   {% if component[1].registry %}{% assign registry = component[1].registry | append: "/" %}{% else %}{% assign registry = page.registry -%} {% endif -%}
-   docker tag {{ registry }}{{ component[1].image }}:{{component[1].version}} $REGISTRY/$IMAGE_PATH/{{ component[1].image | split: "/" | last }}:{{component[1].version}}
-   {% endif -%}
+   {%-  capture component_name %}{{ component[0] }}{% endcapture -%}
+
+   {%-  if page.imageNames[component_name] %}{% unless component_name contains "flannel" -%}
+   {%-    assign component_name = page.imageNames[component_name] -%}
+   {%     if component[1].registry %}{% assign registry = component[1].registry | append: "/" %}{% else %}{% assign registry = page.registry -%} {% endif -%}
+   docker tag {{ registry }}{{ component_name }}:{{component[1].version}} $REGISTRY/$IMAGE_PATH/{{ component_name | split: "/" | last }}:{{component[1].version}}
+   {%   endunless %}{% endif -%}
    {% endfor -%}
    ```
 
@@ -31,9 +39,12 @@ To install images from your registry, you must first pull the images from Tigera
    ```bash
    docker push $REGISTRY/$IMAGE_PATH/{{ operator.image | split: "/" | last }}:{{ operator.version }}
    {% for component in site.data.versions.first.components -%}
-   {% if component[1].image -%}
-   docker push $REGISTRY/$IMAGE_PATH/{{ component[1].image | split: "/" | last}}:{{component[1].version}}
-   {% endif -%}
+   {%-  capture component_name %}{{ component[0] }}{% endcapture -%}
+
+   {%-  if page.imageNames[component_name] %}{% unless component_name contains "flannel" -%}
+   {%-    assign component_name = page.imageNames[component_name] -%}
+   docker push $REGISTRY/$IMAGE_PATH/{{ component_name | split: "/" | last}}:{{component[1].version}}
+   {%   endunless %}{% endif -%}
    {% endfor -%}
    ```
 
